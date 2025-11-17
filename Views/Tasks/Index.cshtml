@@ -1,0 +1,46 @@
+﻿@model IEnumerable<TaskManagement_02.Models.TaskModel>
+<h2> Task Management</h2>
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-secondary">All</a>
+    <a asp-action="Filter" asp-route-status="Pending" class="btn btn-warning">Pending</a>
+    <a asp-action="Filter" asp-route-status="Completed" class="btn btn-success">Completed</a>
+</div>
+<p>
+    <a asp-action="Create" class="btn btn-primary">Add New Task</a>
+    <a asp-controller="Category" asp-action="Create" class="btn btn-success ms-2">Add New Category</a>
+</p>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Assigned Person</th>
+            <th>Description</th>
+            <th>Assigned Date</th>
+            <th>Submission Date</th>
+            <th>Task Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var task in Model)
+        {
+            <tr>
+                <td>@task.Name</td>
+                <td>@task.CategoryName</td>
+                <td>@task.AssignedPerson?.Name</td>
+                <td>@task.Description</td>
+                <td>@task.AssignedDate.ToString("yyyy-MM-dd")</td>
+                <td>@task.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                <td>@task.TaskStatus</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-sm btn-info">Details</a>
+                    <a asp-action="Delete" asp-route-id="@task.Id" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,20 @@
+﻿@model TaskManagement_02.Models.TaskModel
+
+<h2>Delete Task</h2>
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>
+
+<table class="table">
+    <tr><th>Name</th><td>@Model.Name</td></tr>
+    <tr><th>Category</th><td>@Model.CategoryName</td></tr>
+    <tr><th>Assigned Person</th><td>@Model.AssignedPerson?.Name</td></tr>
+    <tr><th>Assigned Date</th><td>@Model.AssignedDate.ToString("yyyy-MM-dd")</td></tr>
+</table>
+
+<form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+</form>

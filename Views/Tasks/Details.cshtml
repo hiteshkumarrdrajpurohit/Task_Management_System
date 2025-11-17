@@ -1,0 +1,18 @@
+﻿@model TaskManagement_02.Models.TaskModel
+
+<h2>Task Details</h2>
+
+<div class="mb-3">
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Back to List</a>
+</div>
+
+<table class="table">
+    <tr><th>Name</th><td>@Model.Name</td></tr>
+    <tr><th>Category</th><td>@Model.CategoryName</td></tr>
+    <tr><th>Assigned Person</th><td>@Model.AssignedPerson?.Name</td></tr>
+    <tr><th>Description</th><td>@Model.Description</td></tr>
+    <tr><th>Assigned Date</th><td>@Model.AssignedDate.ToString("yyyy-MM-dd")</td></tr>
+    <tr><th>Submission Date</th><td>@Model.SubmissionDate.ToString("yyyy-MM-dd")</td></tr>
+    <tr><th>Status</th><td>@Model.TaskStatus</td></tr>
+</table>

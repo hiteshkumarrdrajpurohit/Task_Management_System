@@ -1,0 +1,67 @@
+﻿_02\Views\Tasks\Create.cshtml
+@model TaskManagement_02.Models.TaskModel
+
+<h2>@(ViewData["Title"] ?? "Add New Task")</h2>
+
+<form asp-action="Create" method="post" class="border p-4 rounded bg-light">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="form-group mb-3">
+        <label asp-for="AssignedPersonId" class="form-label">Assign To</label>
+        <select asp-for="AssignedPersonId" class="form-select" asp-items="ViewBag.Users">
+            <option value="">-- Select User --</option>
+        </select>
+        <span asp-validation-for="AssignedPersonId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="CategoryName" class="form-label">Category</label>
+        <select asp-for="CategoryName" class="form-select" asp-items="ViewBag.Categories">
+            <option value="">-- Select Category --</option>
+        </select>
+        <span asp-validation-for="CategoryName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" placeholder="Enter task name" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" placeholder="Enter task description"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="AssignedDate" class="form-label"></label>
+        <input asp-for="AssignedDate" type="date" class="form-control" />
+        <span asp-validation-for="AssignedDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="SubmissionDate" class="form-label"></label>
+        <input asp-for="SubmissionDate" type="date" class="form-control" />
+        <span asp-validation-for="SubmissionDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="TaskStatus" class="form-label"></label>
+        <select asp-for="TaskStatus" class="form-select" asp-items="ViewBag.StatusList">
+            <option value="">-- Select Status --</option>
+        </select>
+        <span asp-validation-for="TaskStatus" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Task</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Back to List</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
