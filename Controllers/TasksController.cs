@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TaskManagement_02.Data;
@@ -8,6 +9,7 @@ using System.Linq;
 
 namespace TaskManagement_02.Controllers
 {
+    [Authorize] // require authentication for all actions in this controller
     public class TasksController : Controller
     {
         private readonly ApplicationDbContext _context;
