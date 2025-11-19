@@ -1,12 +1,11 @@
-﻿_02\Views\Tasks\Create.cshtml
-@model TaskManagement_02.Models.TaskModel
+﻿@model TaskManagement_02.Models.TaskModel
 
 <h2>@(ViewData["Title"] ?? "Add New Task")</h2>
 
-<form asp-action="Create" method="post" class="border p-4 rounded bg-light">
+<form asp-action="Create" method="post" class="border p-4 rounded bg-light" id="task-create-form">
     @Html.AntiForgeryToken()
 
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" id="validation-summary"></div>
 
     <div class="form-group mb-3">
         <label asp-for="AssignedPersonId" class="form-label">Assign To</label>
@@ -38,14 +37,14 @@
 
     <div class="form-group mb-3">
         <label asp-for="AssignedDate" class="form-label"></label>
-        <input asp-for="AssignedDate" type="date" class="form-control" />
-        <span asp-validation-for="AssignedDate" class="text-danger"></span>
+        <input asp-for="AssignedDate" type="date" class="form-control" id="AssignedDate" />
+        <span asp-validation-for="AssignedDate" class="text-danger" id="assignedDate-error"></span>
     </div>
 
     <div class="form-group mb-3">
         <label asp-for="SubmissionDate" class="form-label"></label>
-        <input asp-for="SubmissionDate" type="date" class="form-control" />
-        <span asp-validation-for="SubmissionDate" class="text-danger"></span>
+        <input asp-for="SubmissionDate" type="date" class="form-control" id="SubmissionDate" />
+        <span asp-validation-for="SubmissionDate" class="text-danger" id="submissionDate-error"></span>
     </div>
 
     <div class="form-group mb-3">
@@ -62,6 +61,7 @@
 
 @section Scripts {
     @{
+        // keep general unobtrusive validation scripts, but the custom date-check script was removed
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }

@@ -29,6 +29,9 @@ namespace TaskManagement_02.Models
 
         [Required]
         public Dept Department { get; set; }
+
+        [Required]
+        public RoleType Role { get; set; }= RoleType.User;
         public virtual ICollection<TaskModel>? Tasks { get; set; } 
     }
 }

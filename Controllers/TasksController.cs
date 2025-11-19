@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using TaskManagement_02.Data;
 using TaskManagement_02.Models;
 using TaskManagement_02.Types;
@@ -9,7 +10,7 @@ using System.Linq;
 
 namespace TaskManagement_02.Controllers
 {
-    [Authorize] // require authentication for all actions in this controller
+    [Authorize]
     public class TasksController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -19,19 +20,34 @@ namespace TaskManagement_02.Controllers
             _context = context;
         }
 
-        // READ - List all tasks (include related entities)
+        private int? GetCurrentUserId()
+        {
+            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(id, out var i) ? i : (int?)null;
+        }
+
+        private bool IsAdmin() => User.IsInRole("Admin");
+
+        // READ - List tasks; admin sees all, users see only their tasks
         public async Task<IActionResult> Index()
         {
-            var tasks = await _context.Tasks
+            var query = _context.Tasks
                 .Include(t => t.AssignedPerson)
                 .Include(t => t.Category)
-                .ToListAsync();
+                .AsQueryable();
 
+            if (!IsAdmin())
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null) return Forbid();
+                query = query.Where(t => t.AssignedPersonId == userId.Value);
+            }
+
+            var tasks = await query.ToListAsync();
             return View(tasks);
         }
 
-        // FILTER - List tasks by status (called by Index buttons)
-        [HttpGet]
+        // FILTER - List tasks by status
         public async Task<IActionResult> Filter(string status)
         {
             if (string.IsNullOrWhiteSpace(status))
@@ -40,12 +56,20 @@ namespace TaskManagement_02.Controllers
             if (!Enum.TryParse<Status>(status, true, out var parsedStatus))
                 return RedirectToAction(nameof(Index));
 
-            var tasks = await _context.Tasks
+            var query = _context.Tasks
                 .Include(t => t.AssignedPerson)
                 .Include(t => t.Category)
                 .Where(t => t.TaskStatus == parsedStatus)
-                .ToListAsync();
+                .AsQueryable();
 
+            if (!IsAdmin())
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null) return Forbid();
+                query = query.Where(t => t.AssignedPersonId == userId.Value);
+            }
+
+            var tasks = await query.ToListAsync();
             ViewData["Filter"] = parsedStatus.ToString();
             return View("Index", tasks);
         }
@@ -58,21 +82,47 @@ namespace TaskManagement_02.Controllers
             return View();
         }
 
-        // CREATE - POST
+        // CREATE - POST (server-side validation for dates and assigned user)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TaskModel task)
         {
-            if (ModelState.IsValid)
+            // Validate assigned person selection exists
+            if (task.AssignedPersonId <= 0)
             {
-                _context.Tasks.Add(task);
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError(nameof(task.AssignedPersonId), "Please select a user to assign.");
+            }
+            else
+            {
+                var assignedUser = await _context.Users.FindAsync(task.AssignedPersonId);
+                if (assignedUser == null)
+                {
+                    ModelState.AddModelError(nameof(task.AssignedPersonId), "Selected user not found.");
+                }
+                else if (!IsAdmin() && assignedUser.Role == RoleType.Admin)
+                {
+                    // Non-admins must not assign to Admins
+                    ModelState.AddModelError(nameof(task.AssignedPersonId), "You cannot assign tasks to Admin users.");
+                }
             }
 
-            await LoadDropDowns(task);
-            return View(task);
+            // Server-side date validation: AssignedDate must be on-or-before SubmissionDate
+            if (task.AssignedDate != default && task.SubmissionDate != default && task.AssignedDate > task.SubmissionDate)
+            {
+                ModelState.AddModelError(nameof(task.AssignedDate), "Assigned Date must be on or before Submission Date.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await LoadDropDowns(task);
+                return View(task);
+            }
+
+            // All validations passed — create the task
+            _context.Tasks.Add(task);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // EDIT - GET
@@ -84,36 +134,80 @@ namespace TaskManagement_02.Controllers
             var task = await _context.Tasks.FindAsync(id.Value);
             if (task == null) return NotFound();
 
+            // authorization: only owner or admin
+            if (!IsAdmin())
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null || task.AssignedPersonId != userId.Value)
+                    return Forbid();
+            }
+
             await LoadDropDowns(task);
             return View(task);
         }
 
-        // EDIT - POST
+        // EDIT - POST (server-side date validation and secure ownership check)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, TaskModel task)
         {
             if (id != task.Id) return NotFound();
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(task);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!await _context.Tasks.AnyAsync(t => t.Id == id))
-                        return NotFound();
-                    throw;
-                }
+            // Load original task to verify ownership and prevent tampering
+            var dbTask = await _context.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
+            if (dbTask == null) return NotFound();
 
-                return RedirectToAction(nameof(Index));
+            // authorization: only original owner or admin can edit
+            if (!IsAdmin())
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null || dbTask.AssignedPersonId != userId.Value)
+                    return Forbid();
             }
 
-            await LoadDropDowns(task);
-            return View(task);
+            // Validate assigned person selection exists and role constraints
+            if (task.AssignedPersonId <= 0)
+            {
+                ModelState.AddModelError(nameof(task.AssignedPersonId), "Please select a user to assign.");
+            }
+            else
+            {
+                var assignedUser = await _context.Users.FindAsync(task.AssignedPersonId);
+                if (assignedUser == null)
+                {
+                    ModelState.AddModelError(nameof(task.AssignedPersonId), "Selected user not found.");
+                }
+                else if (!IsAdmin() && assignedUser.Role == RoleType.Admin)
+                {
+                    ModelState.AddModelError(nameof(task.AssignedPersonId), "You cannot assign tasks to Admin users.");
+                }
+            }
+
+            // Server-side date validation
+            if (task.AssignedDate != default && task.SubmissionDate != default && task.AssignedDate > task.SubmissionDate)
+            {
+                ModelState.AddModelError(nameof(task.AssignedDate), "Assigned Date must be on or before Submission Date.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await LoadDropDowns(task);
+                return View(task);
+            }
+
+            try
+            {
+                _context.Update(task);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.Tasks.AnyAsync(t => t.Id == id))
+                    return NotFound();
+                throw;
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         // DETAILS - GET
@@ -128,6 +222,15 @@ namespace TaskManagement_02.Controllers
                 .FirstOrDefaultAsync(t => t.Id == id.Value);
 
             if (task == null) return NotFound();
+
+            // allow owner or admin
+            if (!IsAdmin())
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null || task.AssignedPersonId != userId.Value)
+                    return Forbid();
+            }
+
             return View(task);
         }
 
@@ -143,10 +246,19 @@ namespace TaskManagement_02.Controllers
                 .FirstOrDefaultAsync(t => t.Id == id.Value);
 
             if (task == null) return NotFound();
+
+            // authorization: only owner or admin
+            if (!IsAdmin())
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null || task.AssignedPersonId != userId.Value)
+                    return Forbid();
+            }
+
             return View(task);
         }
 
-        // DELETE - POST (existing)
+        // DELETE - POST
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -154,29 +266,55 @@ namespace TaskManagement_02.Controllers
             var task = await _context.Tasks.FindAsync(id);
             if (task != null)
             {
+                // authorization: only owner or admin
+                if (!IsAdmin())
+                {
+                    var userId = GetCurrentUserId();
+                    if (userId == null || task.AssignedPersonId != userId.Value)
+                        return Forbid();
+                }
+
                 _context.Tasks.Remove(task);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
         }
 
-        //  Helper method to avoid duplicate ViewBag code (async)
+        // PROFILE - show current user's profile (user info only)
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Profile()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return RedirectToAction("SignIn");
+
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId.Value);
+
+            if (user == null) return NotFound();
+
+            return View(user);
+        }
+
+        // Helper - load dropdowns (filters users for non-admins)
         private async Task LoadDropDowns(TaskModel? task = null)
         {
-            var users = await _context.Users
-                .OrderBy(u => u.Name)
-                .ToListAsync();
+            var usersQuery = _context.Users.OrderBy(u => u.Name).AsQueryable();
+            if (!IsAdmin())
+            {
+                usersQuery = usersQuery.Where(u => u.Role == RoleType.User);
+            }
 
+            var users = await usersQuery.ToListAsync();
+                          
             var categories = await _context.Categories
                 .OrderBy(c => c.Name)
                 .ToListAsync();
 
             ViewBag.Users = new SelectList(users, "Id", "Name", task?.AssignedPersonId);
-
-            // Use CategoryModel.Name as the value/text and the TaskModel.CategoryName as selected value
             ViewBag.Categories = new SelectList(categories, "Name", "Name", task?.CategoryName);
 
-            // Build Status list with explicit value/text so selected binding is deterministic
             ViewBag.StatusList = new SelectList(
                 Enum.GetValues(typeof(Status))
                     .Cast<Status>()
