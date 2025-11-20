@@ -35,10 +35,7 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                                     <li>
-                                        <form asp-controller="User" asp-action="Profile" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-link dropdown-item">Profile</button>
-                                        </form>
+                                        <a class="dropdown-item" asp-controller="User" asp-action="Profile">Profile</a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" asp-controller="User" asp-action="ChangePassword">Change Password</a>
