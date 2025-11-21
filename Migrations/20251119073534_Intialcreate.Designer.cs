@@ -12,8 +12,8 @@ using TaskManagement_02.Data;
 namespace TaskManagement_02.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251112062807_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251119073534_Intialcreate")]
+    partial class Intialcreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -108,6 +108,9 @@ namespace TaskManagement_02.Migrations
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

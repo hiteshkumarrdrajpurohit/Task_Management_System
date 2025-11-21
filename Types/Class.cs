@@ -29,4 +29,9 @@
         Medium,
         High
     }
+    public enum RoleType
+    {
+        Admin,
+        User
+    }
 }

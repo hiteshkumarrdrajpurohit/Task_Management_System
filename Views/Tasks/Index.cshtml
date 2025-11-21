@@ -1,5 +1,5 @@
 ﻿@model IEnumerable<TaskManagement_02.Models.TaskModel>
-<h2> Task Management</h2>
+
 
 <div class="mb-3">
     <a asp-action="Index" class="btn btn-secondary">All</a>
@@ -8,7 +8,12 @@
 </div>
 <p>
     <a asp-action="Create" class="btn btn-primary">Add New Task</a>
-    <a asp-controller="Category" asp-action="Create" class="btn btn-success ms-2">Add New Category</a>
+
+    @* Only show Add Category to Admin users *@
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-controller="Category" asp-action="Create" class="btn btn-success ms-2">Add New Category</a>
+    }
 </p>
 
 <table class="table table-bordered">
@@ -16,7 +21,7 @@
         <tr>
             <th>Name</th>
             <th>Category</th>
-            <th>Assigned Person</th>
+            <th> Assigned Person</th>
             <th>Description</th>
             <th>Assigned Date</th>
             <th>Submission Date</th>

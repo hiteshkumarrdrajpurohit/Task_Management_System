@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
+using Microsoft.Identity.Client;
 using System.Security.Claims;
 using TaskManagement_02.Data;
 using TaskManagement_02.Models;
@@ -50,6 +52,9 @@ namespace TaskManagement_02.Controllers
                 return View(model);
             }
 
+            // Ensure default role is User if not provided
+            model.Role = model.Role;
+
             // Hash password before saving
             model.Password = _passwordHasher.HashPassword(model, model.Password);
 
@@ -85,7 +90,8 @@ namespace TaskManagement_02.Controllers
                     {
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                         new Claim(ClaimTypes.Name, user.Name),
-                        new Claim(ClaimTypes.Email, user.Email)
+                        new Claim(ClaimTypes.Email, user.Email),
+                        new Claim(ClaimTypes.Role, user.Role.ToString()) 
                     };
 
                     var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -114,6 +120,61 @@ namespace TaskManagement_02.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
+            return RedirectToAction("SignIn");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId==null) return RedirectToAction("SignIn");
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId.Value);
+            if(user == null)
+            {
+                return NotFound();
+            }
+            return View(user);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ChangePassword()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue)
+            {
+                return RedirectToAction("SignIn");
+            }
+            return View();
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue) return RedirectToAction("SignIn");
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id==userId.Value);
+            if (user ==null) return NotFound();
+            // verify current Password
+            var verification = _passwordHasher.VerifyHashedPassword(user, user.Password, model.CurrentPassword);
+            if (verification != PasswordVerificationResult.Success)
+            {
+                ModelState.AddModelError(nameof(model.CurrentPassword), "Current password is incorrect.");
+                return View(model);
+            }
+            // Hash and update new password 
+            user.Password = _passwordHasher.HashPassword(user, model.NewPassword);
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Password changed successfully";
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Clear();
             return RedirectToAction("SignIn");
