@@ -1,12 +1,10 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using TaskManagement_02.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
-//Register DbContext with conncetion string
-
+// Register DbContext with connection string
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -18,7 +16,19 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-//  Add MVC services
+// Authentication & Authorization
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/User/SignIn";
+        options.LogoutPath = "/User/Logout";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true;
+    });
+
+builder.Services.AddAuthorization();
+
+// Add MVC services
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
@@ -27,7 +37,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -38,6 +47,7 @@ app.UseRouting();
 
 app.UseSession();
 
+app.UseAuthentication(); // must come before UseAuthorization
 app.UseAuthorization();
 
 app.MapControllerRoute(

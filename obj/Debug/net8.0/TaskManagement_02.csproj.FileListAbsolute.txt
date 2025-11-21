@@ -169,3 +169,5 @@ C:\Users\hiteshr\source\repos\TaskManagementSystem\TaskManagement_02\obj\Debug\n
 C:\Users\hiteshr\source\repos\TaskManagementSystem\TaskManagement_02\obj\Debug\net8.0\TaskManagement_02.pdb
 C:\Users\hiteshr\source\repos\TaskManagementSystem\TaskManagement_02\obj\Debug\net8.0\TaskManagement_02.genruntimeconfig.cache
 C:\Users\hiteshr\source\repos\TaskManagementSystem\TaskManagement_02\obj\Debug\net8.0\ref\TaskManagement_02.dll
+C:\Users\hiteshr\source\repos\TaskManagementSystem\TaskManagement_02\obj\Debug\net8.0\TaskManagement_02.sourcelink.json
+C:\Users\hiteshr\source\repos\TaskManagementSystem\TaskManagement_02\bin\Debug\net8.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
