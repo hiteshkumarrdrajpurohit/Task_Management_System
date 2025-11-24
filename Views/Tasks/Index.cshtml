@@ -5,47 +5,55 @@
     <a asp-action="Index" class="btn btn-secondary">All</a>
     <a asp-action="Filter" asp-route-status="Pending" class="btn btn-warning">Pending</a>
     <a asp-action="Filter" asp-route-status="Completed" class="btn btn-success">Completed</a>
+    <a asp-action="Filter" asp-route-status="Overdue" class="btn btn-danger">Overdue</a>
+    <a asp-action="Filter" asp-route-status="Inprogress" class=" btn btn-info">In Progress</a>
 </div>
 <p>
     <a asp-action="Create" class="btn btn-primary">Add New Task</a>
 
-    @* Only show Add Category to Admin users *@
     @if (User.IsInRole("Admin"))
     {
         <a asp-controller="Category" asp-action="Create" class="btn btn-success ms-2">Add New Category</a>
     }
 </p>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Category</th>
-            <th> Assigned Person</th>
-            <th>Description</th>
-            <th>Assigned Date</th>
-            <th>Submission Date</th>
-            <th>Task Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach(var task in Model)
-        {
+<div class="table-responsive">
+    <table class="table table-bordered table-hover">
+        <thead>
             <tr>
-                <td>@task.Name</td>
-                <td>@task.CategoryName</td>
-                <td>@task.AssignedPerson?.Name</td>
-                <td>@task.Description</td>
-                <td>@task.AssignedDate.ToString("yyyy-MM-dd")</td>
-                <td>@task.SubmissionDate.ToString("yyyy-MM-dd")</td>
-                <td>@task.TaskStatus</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-sm btn-warning">Edit</a>
-                    <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-sm btn-info">Details</a>
-                    <a asp-action="Delete" asp-route-id="@task.Id" class="btn btn-sm btn-danger">Delete</a>
-                </td>
+                <th>Name</th>
+                <th>Category</th>
+                <th> Assigned Person</th>
+                <th>Description</th>
+                <th>Assigned Date</th>
+                <th>Submission Date</th>
+                <th>Task Status</th>
+                <th>Actions</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach(var task in Model)
+            {
+                <tr>
+                    <td>@task.Name</td>
+                    <td>@task.CategoryName</td>
+                    <td>@task.AssignedPerson?.Name</td>
+                    <td class="description">@task.Description</td>
+                    <td>@task.AssignedDate.ToString("yyyy-MM-dd")</td>
+                    <td>@task.SubmissionDate.ToString("yyyy-MM-dd")</td>
+                    <td>@task.TaskStatus</td>
+                    <td class="actions">
+                        <div class="d-flex flex-wrap flex-lg-nowrap gap-1 align-items-center" role="group" aria-label="Task actions">
+                            <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-sm btn-warning">Edit</a>
+                            <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-sm btn-info">Details</a>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Delete" asp-route-id="@task.Id" class="btn btn-sm btn-danger">Delete</a>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

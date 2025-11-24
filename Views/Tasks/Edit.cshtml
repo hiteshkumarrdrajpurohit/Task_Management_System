@@ -1,4 +1,7 @@
 ﻿@model TaskManagement_02.Models.TaskModel
+@{
+    bool isUser = User.IsInRole("User");
+}
 
 <h2>Edit Task</h2>
 
@@ -10,23 +13,53 @@
 
     <div class="form-group mb-3">
         <label asp-for="AssignedPersonId" class="form-label">Assign To</label>
-        <select asp-for="AssignedPersonId" class="form-select" asp-items="ViewBag.Users">
-            <option value="">-- Select User --</option>
-        </select>
+        
+        @if (isUser)
+        {
+            <select asp-for="AssignedPersonId" class="form-select" asp-items="ViewBag.Users" disabled>
+                <option value="">-- Select User --</option>
+            </select>
+            <input type="hidden" asp-for="AssignedPersonId" />
+        }
+        else
+        {
+            <select asp-for="AssignedPersonId" class="form-select" asp-items="ViewBag.Users">
+                <option value="">-- Select User --</option>
+            </select>
+        }
         <span asp-validation-for="AssignedPersonId" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
         <label asp-for="CategoryName" class="form-label">Category</label>
-        <select asp-for="CategoryName" class="form-select" asp-items="ViewBag.Categories">
-            <option value="">-- Select Category --</option>
-        </select>
+       
+        @if (isUser)
+        {
+            <select asp-for="CategoryName" class="form-select" asp-items="ViewBag.Categories" disabled>
+                <option value="">-- Select Category --</option>
+            </select>
+            <input type="hidden" asp-for="CategoryName" />
+        }
+        else
+        {
+            <select asp-for="CategoryName" class="form-select" asp-items="ViewBag.Categories" >
+                <option value="">-- Select Category --</option>
+            </select>
+        }
         <span asp-validation-for="CategoryName" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
         <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
+        @if (isUser)
+        {
+            <input  asp-for="Name" type="text" class="form-control" disabled />
+            <input asp-for="Name" type="hidden"  class="form-control" />
+        }
+        else
+        {
+            <input asp-for="Name" class="form-control" />
+        }
         <span asp-validation-for="Name" class="text-danger"></span>
     </div>
 
@@ -38,13 +71,30 @@
 
     <div class="form-group mb-3">
         <label asp-for="AssignedDate" class="form-label"></label>
-        <input asp-for="AssignedDate" type="date" class="form-control" />
+        @if (isUser)
+        {
+            <input asp-for="AssignedDate" type="date" class="form-control" readonly/>
+           
+        }
+        else
+        {
+            <input asp-for="AssignedDate"  type="date" class="form-control" />
+        }
+
         <span asp-validation-for="AssignedDate" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
         <label asp-for="SubmissionDate" class="form-label"></label>
-        <input asp-for="SubmissionDate" type="date" class="form-control" />
+        @if (isUser)
+        {
+            <input asp-for="SubmissionDate" type="date" class="form-control" readonly />
+          
+        }
+        else
+        {
+            <input asp-for="SubmissionDate" type="date" class="form-control" />
+        }
         <span asp-validation-for="SubmissionDate" class="text-danger"></span>
     </div>
 
