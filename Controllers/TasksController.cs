@@ -2,11 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using TaskManagement_02.Data;
 using TaskManagement_02.Models;
 using TaskManagement_02.Types;
-using System.Linq;
 
 namespace TaskManagement_02.Controllers
 {
@@ -27,6 +28,28 @@ namespace TaskManagement_02.Controllers
         }
 
         private bool IsAdmin() => User.IsInRole("Admin");
+
+        private bool TaskDateValid(TaskModel task)
+        {
+            // Ensure required dates are present (model has [Required] but validate server-side as well)
+            if (task.AssignedDate == default)
+            {
+                ModelState.AddModelError(nameof(task.AssignedDate), "Assigned Date is required.");
+            }
+
+            if (task.SubmissionDate == default)
+            {
+                ModelState.AddModelError(nameof(task.SubmissionDate), "Submission Date is required.");
+            }
+
+            // AssignedDate must not be after SubmissionDate
+                if (task.AssignedDate != default && task.SubmissionDate != default && task.AssignedDate > task.SubmissionDate)
+            {
+                ModelState.AddModelError(nameof(task.AssignedDate), "Assigned Date must be on or before Submission Date.");
+            }
+
+            return ModelState.IsValid;
+        }
 
         // READ - List tasks; admin sees all, users see only their tasks
         public async Task<IActionResult> Index()
@@ -106,10 +129,11 @@ namespace TaskManagement_02.Controllers
                 }
             }
 
-            // Server-side date validation: AssignedDate must be on-or-before SubmissionDate
-            if (task.AssignedDate != default && task.SubmissionDate != default && task.AssignedDate > task.SubmissionDate)
+            // Server-side date validation via helper
+            if (!TaskDateValid(task))
             {
-                ModelState.AddModelError(nameof(task.AssignedDate), "Assigned Date must be on or before Submission Date.");
+                await LoadDropDowns(task);
+                return View(task);
             }
 
             if (!ModelState.IsValid)
@@ -183,10 +207,11 @@ namespace TaskManagement_02.Controllers
                 }
             }
 
-            // Server-side date validation
-            if (task.AssignedDate != default && task.SubmissionDate != default && task.AssignedDate > task.SubmissionDate)
+            // Server-side date validation via helper
+            if (!TaskDateValid(task))
             {
-                ModelState.AddModelError(nameof(task.AssignedDate), "Assigned Date must be on or before Submission Date.");
+                await LoadDropDowns(task);
+                return View(task);
             }
 
             if (!ModelState.IsValid)
@@ -235,7 +260,9 @@ namespace TaskManagement_02.Controllers
         }
 
         // DELETE - GET (confirmation)
+        
         [HttpGet]
+        [Authorize(Roles ="Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -248,18 +275,19 @@ namespace TaskManagement_02.Controllers
             if (task == null) return NotFound();
 
             // authorization: only owner or admin
-            if (!IsAdmin())
-            {
-                var userId = GetCurrentUserId();
-                if (userId == null || task.AssignedPersonId != userId.Value)
-                    return Forbid();
-            }
+            //if (!IsAdmin())
+            //{
+            //    var userId = GetCurrentUserId();
+            //    if (userId == null || task.AssignedPersonId != userId.Value)
+            //        return Forbid();
+            //}
 
             return View(task);
         }
 
         // DELETE - POST
         [HttpPost, ActionName("Delete")]
+        [Authorize(Roles ="Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
@@ -267,12 +295,12 @@ namespace TaskManagement_02.Controllers
             if (task != null)
             {
                 // authorization: only owner or admin
-                if (!IsAdmin())
-                {
-                    var userId = GetCurrentUserId();
-                    if (userId == null || task.AssignedPersonId != userId.Value)
-                        return Forbid();
-                }
+                //if (!IsAdmin())
+                //{
+                //    var userId = GetCurrentUserId();
+                //    if (userId == null || task.AssignedPersonId != userId.Value)
+                //        return Forbid();
+                //}
 
                 _context.Tasks.Remove(task);
                 await _context.SaveChangesAsync();

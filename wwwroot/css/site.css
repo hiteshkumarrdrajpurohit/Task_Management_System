@@ -20,3 +20,78 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* Keep action buttons inline on larger screens, allow wrapping on smaller screens */
+.actions {
+    white-space: normal; /* allow wrapping by default so CSS control via media queries is simpler */
+}
+
+/* small gap between buttons in row layout */
+.actions .btn {
+    margin-right: 0.25rem;
+}
+
+/* make long description content wrap instead of forcing table to expand */
+.description {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Ensure horizontal scrolling on narrow viewports (bootstrap's table-responsive helps; reinforce touch behavior) */
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Layout and spacing tweaks for medium and below (<= 992px) */
+@media (max-width: 992px) {
+    /* Allow table cells to wrap content so columns don't force huge widths */
+    .table th, .table td {
+        white-space: normal;
+        vertical-align: middle;
+    }
+
+    /* Make description narrower and wrap */
+    .description {
+        max-width: 280px;
+        white-space: normal;
+    }
+
+    /* Make action buttons wrap and be compact on tablets */
+    .actions .d-flex {
+        /* default flex-wrap is set in markup (flex-wrap) – ensure alignment for wrapped items */
+        align-items: center;
+    }
+
+    .actions .btn {
+        margin-bottom: 0.25rem;
+    }
+
+    /* Slightly reduce table padding on smaller screens */
+    .table td, .table th {
+        padding: 0.45rem 0.5rem;
+    }
+}
+
+/* Stack action buttons on extra-small screens for touch-friendliness (<= 576px) */
+@media (max-width: 575.98px) {
+    .actions .d-flex {
+        flex-direction: column !important;
+        align-items: stretch;
+    }
+
+    .actions .btn {
+        width: 100%;
+        margin-right: 0;
+    }
+
+    /* make text a little smaller on very small devices to reduce overflow */
+    html {
+        font-size: 13px;
+    }
+
+    /* tighten header spacing */
+    .mb-3 a.btn {
+        margin-bottom: 0.4rem;
+    }
+}
